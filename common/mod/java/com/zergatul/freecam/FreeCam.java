@@ -20,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -162,7 +163,7 @@ public class FreeCam {
         }
 
         Entity entity = mc.getCameraEntity();
-        if (entity == null) {
+        if (mc.player == null || entity == null) {
             return;
         }
 
@@ -350,12 +351,22 @@ public class FreeCam {
     public void onClientTickStart() {
         if (active) {
             disableKey(mc.options.keyTogglePerspective);
-            playerInput.tick();
+
+            if (mc.player != null && mc.player.input != playerInput) {
+                // don't tick here, since vanilla code will run tick during LocalPlayer.aiStep
+                playerInput.tick();
+            }
         }
     }
 
     public void onLevelChange() {
         disable();
+    }
+
+    public void onFovOverride(boolean isLevelRender, CallbackInfoReturnable<Float> info) {
+        if (active && isLevelRender) {
+            info.setReturnValue((float) mc.options.fov().get());
+        }
     }
 
     public void onRenderWorldLast(Matrix4f pose, Matrix4f projectionMatrix, Camera camera) {
