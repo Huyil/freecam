@@ -18,7 +18,7 @@ public abstract class MixinMinecraft {
     }
 
     @Inject(at = @At("HEAD"), method = "disconnect(Lnet/minecraft/client/gui/screens/Screen;ZZ)V")
-    private void onDisconnect(Screen screen, boolean clearResourcePacks, boolean stopSounds, CallbackInfo ci) {
+    private void onDisconnect(Screen screen, boolean keepResourcePacks, boolean stopSounds, CallbackInfo ci) {
         FreeCam.instance.onLevelChange();
     }
 

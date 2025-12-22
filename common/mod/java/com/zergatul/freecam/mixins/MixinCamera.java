@@ -14,10 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MixinCamera {
 
     @Shadow(aliases = "Lnet/minecraft/client/Camera;setRotation(FF)V")
-    protected abstract void setRotation(float p_90573_, float p_90574_);
+    protected abstract void setRotation(final float yRot, final float xRot);
 
     @Shadow(aliases = "Lnet/minecraft/client/Camera;setPosition(DDD)V")
-    protected abstract void setPosition(double p_90585_, double p_90586_, double p_90587_);
+    protected abstract void setPosition(final double x, final double y, final double z);
 
     // skip all position/rotation calculations, but don't skip other fields setup logic
     @Inject(

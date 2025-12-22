@@ -38,7 +38,7 @@ public abstract class MixinGameRenderer {
     }
 
     @Inject(at = @At("HEAD"), method = "getFov", cancellable = true)
-    private void onGetFov(Camera camera, float partialTicks, boolean isLevelRender, CallbackInfoReturnable<Float> info) {
-        FreeCam.instance.onFovOverride(isLevelRender, info);
+    private void onGetFov(Camera camera, float partialTicks, boolean applyEffects, CallbackInfoReturnable<Float> info) {
+        FreeCam.instance.onFovOverride(applyEffects, info);
     }
 }

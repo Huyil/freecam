@@ -363,8 +363,8 @@ public class FreeCam {
         disable();
     }
 
-    public void onFovOverride(boolean isLevelRender, CallbackInfoReturnable<Float> info) {
-        if (active && isLevelRender) {
+    public void onFovOverride(boolean applyEffects, CallbackInfoReturnable<Float> info) {
+        if (active && applyEffects) {
             info.setReturnValue((float) mc.options.fov().get());
         }
     }
@@ -454,7 +454,7 @@ public class FreeCam {
                     lines.add(getPropertyValueString(entry));
                 }
 
-                state.getTags().map(tag -> "#" + tag.location()).forEach(lines::add);
+                state.tags().map(tag -> "#" + tag.location()).forEach(lines::add);
 
                 displayer.addToGroup(group, lines);
             }

@@ -29,17 +29,17 @@ jobs:
           ./gradlew build
           cd ..
 
-      - name: Build Forge
-        run: |
-          cd forge
-          ./gradlew build
-          cd ..
+      # - name: Build Forge
+      #   run: |
+      #     cd forge
+      #     ./gradlew build
+      #     cd ..
 
-      - name: Build NeoForge
-        run: |
-          cd neoforge
-          ./gradlew build
-          cd ..
+      # - name: Build NeoForge
+      #   run: |
+      #     cd neoforge
+      #     ./gradlew build
+      #     cd ..
 
       - name: Upload fabric artifacts
         uses: actions/upload-artifact@v4
@@ -49,18 +49,18 @@ jobs:
           compression-level: 0
           if-no-files-found: error
 
-      - name: Upload forge artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: forge
-          path: forge/build/libs/*.jar
-          compression-level: 0
-          if-no-files-found: error
+      # - name: Upload forge artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: forge
+      #     path: forge/build/libs/*.jar
+      #     compression-level: 0
+      #     if-no-files-found: error
 
-      - name: Upload neoforge artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: neoforge
-          path: neoforge/build/libs/*.jar
-          compression-level: 0
-          if-no-files-found: error
+      # - name: Upload neoforge artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: neoforge
+      #     path: neoforge/build/libs/*.jar
+      #     compression-level: 0
+      #     if-no-files-found: error
