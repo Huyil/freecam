@@ -1,24 +1,16 @@
-buildscript {
-    repositories {
-        maven { url = 'https://repo.spongepowered.org/maven' }
-        mavenCentral()
-    }
-}
-
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
-    id 'maven-publish'
 }
 
 def commonProperties = new Properties()
 file('../common/gradle.properties').withInputStream { commonProperties.load(it) }
 ext.mod_version = commonProperties['mod_version']
 
-version = project.mod_version
 group = project.maven_group
+version = project.mod_version
 
 base {
-	archivesName = project.archives_base_name
+    archivesName = project.archives_base_name
 }
 
 sourceSets {
@@ -29,7 +21,6 @@ sourceSets {
         }
         resources {
             srcDir '../common/mod/resources'
-            srcDir 'src/generated/resources'
         }
     }
 }
@@ -54,9 +45,6 @@ tasks.withType(JavaCompile).configureEach {
 
 java {
     //withSourcesJar()
-
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
 
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
