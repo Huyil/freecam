@@ -171,13 +171,9 @@ public class FreeCam {
         cameraLock = false;
         eyeLock = false;
         followCamera = false;
-        oldCameraType = mc.options.getCameraType();
         playerInput = mc.player.input;
         mc.player.input = freecamInput = createFreeCamInput(playerInput);
-        mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-        if (oldCameraType.isFirstPerson() != mc.options.getCameraType().isFirstPerson()) {
-            mc.gameRenderer.checkEntityPostEffect(mc.options.getCameraType().isFirstPerson() ? mc.getCameraEntity() : null);
-        }
+        switchCameraType(CameraType.THIRD_PERSON_BACK);
 
         if (config.rememberInputState) {
             dontMoveFreeCamBefore = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(REMEMBER_STATE_DELAY_MS);
@@ -212,13 +208,9 @@ public class FreeCam {
         assert mc.player != null;
 
         active = false;
-        CameraType cameraType = mc.options.getCameraType();
         mc.options.setCameraType(oldCameraType);
         mc.player.input = playerInput;
-        if (cameraType.isFirstPerson() != mc.options.getCameraType().isFirstPerson()) {
-            mc.gameRenderer.checkEntityPostEffect(mc.options.getCameraType().isFirstPerson() ? mc.getCameraEntity() : null);
-        }
-        oldCameraType = null;
+        switchCameraType(oldCameraType);
     }
 
     public void onHandleKeyBindings() {
@@ -361,12 +353,6 @@ public class FreeCam {
 
     public void onLevelChange() {
         disable();
-    }
-
-    public void onFovOverride(boolean applyEffects, CallbackInfoReturnable<Float> info) {
-        if (active && applyEffects) {
-            info.setReturnValue((float) mc.options.fov().get());
-        }
     }
 
     public void onRenderWorldLast(Matrix4f pose, Matrix4f projectionMatrix, Camera camera) {
@@ -540,6 +526,15 @@ public class FreeCam {
         }
 
         return property.getName() + ": " + s;
+    }
+
+    private void switchCameraType(CameraType type) {
+        oldCameraType = mc.options.getCameraType();
+        mc.options.setCameraType(type);
+        if (oldCameraType.isFirstPerson() != mc.options.getCameraType().isFirstPerson()) {
+            mc.gameRenderer.checkEntityPostEffect(mc.options.getCameraType().isFirstPerson() ? mc.getCameraEntity() : null);
+        }
+        mc.levelRenderer.needsUpdate(); // copied from handleKeybinds()
     }
 
     private void disableKey(KeyMapping key) {

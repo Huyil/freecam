@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class MixinGameRenderer {
 
     @Inject(at = @At("HEAD"), method = "render")
-    private void onRender(DeltaTracker delta, boolean tick, CallbackInfo ci) {
+    private void onRender(DeltaTracker delta, boolean renderLevel, CallbackInfo ci) {
         FreeCam.instance.onRenderTickStart(delta);
     }
 
@@ -35,10 +35,5 @@ public abstract class MixinGameRenderer {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/CameraType;isFirstPerson()Z", ordinal = 0))
     private boolean onRenderItemInHandIsFirstPerson(CameraType cameraType) {
         return FreeCam.instance.onRenderItemInHandIsFirstPerson(cameraType);
-    }
-
-    @Inject(at = @At("HEAD"), method = "getFov", cancellable = true)
-    private void onGetFov(Camera camera, float partialTicks, boolean applyEffects, CallbackInfoReturnable<Float> info) {
-        FreeCam.instance.onFovOverride(applyEffects, info);
     }
 }
