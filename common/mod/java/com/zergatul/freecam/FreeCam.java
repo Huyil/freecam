@@ -20,12 +20,8 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class FreeCam {
@@ -56,7 +52,7 @@ public class FreeCam {
     private boolean eyeLock;
     private boolean followCamera;
     private double followDeltaX, followDeltaY, followDeltaZ;
-    private boolean gameRendererPicking;
+    private boolean picking;
     private boolean moveAlongPath;
     private long pathStartTime;
     private long dontMoveFreeCamBefore;
@@ -400,7 +396,7 @@ public class FreeCam {
 
     public boolean shouldOverrideCameraEntityPosition(Entity entity) {
         if (active && !cameraLock && !eyeLock && !followCamera && config.target) {
-            return entity == mc.getCameraEntity() && gameRendererPicking || freecamHitResultPicking;
+            return entity == mc.getCameraEntity() && picking || freecamHitResultPicking;
         } else {
             return false;
         }
@@ -436,10 +432,7 @@ public class FreeCam {
                 lines.add(ChatFormatting.UNDERLINE + "Free Cam Targeted Block: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ());
                 lines.add(String.valueOf(ModApiWrapper.instance.BLOCKS.getKey(state.getBlock())));
 
-                for (var entry: state.getValues().entrySet()) {
-                    lines.add(getPropertyValueString(entry));
-                }
-
+                state.getValues().forEach(value -> lines.add(getPropertyValueString(value)));
                 state.tags().map(tag -> "#" + tag.location()).forEach(lines::add);
 
                 displayer.addToGroup(group, lines);
@@ -450,12 +443,12 @@ public class FreeCam {
         }
     }
 
-    public void onBeforeGameRendererPick() {
-        gameRendererPicking = true;
+    public void onBeforePick() {
+        picking = true;
     }
 
-    public void onAfterGameRendererPick() {
-        gameRendererPicking = false;
+    public void onAfterPick() {
+        picking = false;
     }
 
     private ClientInput createFreeCamInput(ClientInput playerInput) {
@@ -515,9 +508,9 @@ public class FreeCam {
         return velocity;
     }
 
-    private String getPropertyValueString(Map.Entry<Property<?>, Comparable<?>> p_94072_) {
-        Property<?> property = p_94072_.getKey();
-        Comparable<?> comparable = p_94072_.getValue();
+    private String getPropertyValueString(Property.Value<?> value) {
+        Property<?> property = value.property();
+        Object comparable = value.value();
         String s = Util.getPropertyName(property, comparable);
         if (Boolean.TRUE.equals(comparable)) {
             s = ChatFormatting.GREEN + s;

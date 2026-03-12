@@ -31,4 +31,14 @@ public abstract class MixinMinecraft {
     private void onHandleKeyBindings(CallbackInfo info) {
         FreeCam.instance.onHandleKeyBindings();
     }
+
+    @Inject(method = "pick", at = @At("HEAD"))
+    private void onBeforePick(float partialTicks, CallbackInfo info) {
+        FreeCam.instance.onBeforePick();
+    }
+
+    @Inject(method = "pick", at = @At("TAIL"))
+    private void onAfterPick(float partialTicks, CallbackInfo info) {
+        FreeCam.instance.onAfterPick();
+    }
 }
