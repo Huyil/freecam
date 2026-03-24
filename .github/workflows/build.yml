@@ -18,7 +18,6 @@ jobs:
 
       - name: Permissions to Run gradlew
         run: |
-          chmod +x ./annotation-processor/gradlew
           chmod +x ./fabric/gradlew
           chmod +x ./forge/gradlew
           chmod +x ./neoforge/gradlew
@@ -35,11 +34,11 @@ jobs:
       #     ./gradlew build
       #     cd ..
 
-      # - name: Build NeoForge
-      #   run: |
-      #     cd neoforge
-      #     ./gradlew build
-      #     cd ..
+      - name: Build NeoForge
+        run: |
+          cd neoforge
+          ./gradlew build
+          cd ..
 
       - name: Upload fabric artifacts
         uses: actions/upload-artifact@v4
@@ -57,10 +56,10 @@ jobs:
       #     compression-level: 0
       #     if-no-files-found: error
 
-      # - name: Upload neoforge artifacts
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: neoforge
-      #     path: neoforge/build/libs/*.jar
-      #     compression-level: 0
-      #     if-no-files-found: error
+      - name: Upload neoforge artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: neoforge
+          path: neoforge/build/libs/*.jar
+          compression-level: 0
+          if-no-files-found: error
