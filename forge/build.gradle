@@ -5,8 +5,6 @@ plugins {
     id 'net.minecraftforge.gradle' version '[7.0.17,8)'
 }
 
-//apply plugin: 'net.minecraftforge.gradle'
-
 def commonProperties = new Properties()
 file('../common/gradle.properties').withInputStream { commonProperties.load(it) }
 def mod_version = commonProperties['mod_version']
@@ -21,7 +19,6 @@ java {
 }
 
 minecraft {
-    //mappings channel: 'official', version: '26.1'
     runs {
         client {
             workingDir = layout.projectDirectory.dir('run')
@@ -37,7 +34,6 @@ repositories {
     minecraft.mavenizer(it)
     maven fg.forgeMaven
     maven fg.minecraftLibsMaven
-    //mavenCentral()
 }
 
 sourceSets {
