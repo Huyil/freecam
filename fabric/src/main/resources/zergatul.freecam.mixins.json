@@ -10,7 +10,7 @@
     "MixinClientPacketListener",
     "MixinEntity",
     "MixinGameRenderer",
-    "MixinGui",
+    "MixinHud",
     "MixinLevelRenderer",
     "MixinLivingEntityRenderer",
     "MixinMinecraft",

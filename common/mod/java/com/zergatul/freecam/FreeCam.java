@@ -213,7 +213,7 @@ public class FreeCam {
         if (mc.player == null) {
             return;
         }
-        if (mc.screen != null) {
+        if (mc.gui.screen() != null) {
             return;
         }
         while (KeyBindings.toggleFreeCam.consumeClick()) {
