@@ -12,6 +12,8 @@ import net.minecraft.client.player.Input;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.BlockItem;
@@ -474,9 +476,9 @@ public class FreeCam {
                         mc.mouseHandler.releaseMouse();
                         if (middleTotalMovement < 3.0 && !middleConsumedThisHold && mc.player != null) {
                             if (isMainHandPlaceable()) {
-                                ((MixinMinecraftInvoker) mc).freecam$startUseItem();
+                                triggerUse();
                             } else {
-                                ((MixinMinecraftInvoker) mc).freecam$startAttack();
+                                triggerAttack();
                             }
                         }
                     }
@@ -547,7 +549,7 @@ public class FreeCam {
                         rtsUseBoostCounter++;
                         if (rtsUseBoostCounter >= 2) {
                             rtsUseBoostCounter = 0;
-                            ((MixinMinecraftInvoker) mc).freecam$startUseItem();
+                            triggerUse();
                         }
                     } else {
                         rtsUseBoostCounter = 0;
@@ -637,15 +639,38 @@ public class FreeCam {
         float y1 = (float)(box.maxY - cam.y) + 0.002f;
         float z1 = (float)(box.maxZ - cam.z) + 0.002f;
 
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder bb = tesselator.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
-
         boolean ctrl = active && config.rtsMode && KeyBindings.forceSelect.isDown();
         float r = ctrl ? 1.0f : 1.0f;
         float g = ctrl ? 0.3f : 0.5f;
         float b = ctrl ? 1.0f : 0.0f;
         float a = opacity;
 
+        // Semi-transparent filled faces
+        Tesselator tesselator = Tesselator.getInstance();
+        float fa = a * 0.15f;
+        BufferBuilder fillBB = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        // bottom (y0)
+        fillBB.addVertex(x0,y0,z0).setColor(r,g,b,fa); fillBB.addVertex(x1,y0,z0).setColor(r,g,b,fa);
+        fillBB.addVertex(x1,y0,z1).setColor(r,g,b,fa); fillBB.addVertex(x0,y0,z1).setColor(r,g,b,fa);
+        // top (y1)
+        fillBB.addVertex(x0,y1,z0).setColor(r,g,b,fa); fillBB.addVertex(x1,y1,z0).setColor(r,g,b,fa);
+        fillBB.addVertex(x1,y1,z1).setColor(r,g,b,fa); fillBB.addVertex(x0,y1,z1).setColor(r,g,b,fa);
+        // front (z1)
+        fillBB.addVertex(x0,y0,z1).setColor(r,g,b,fa); fillBB.addVertex(x1,y0,z1).setColor(r,g,b,fa);
+        fillBB.addVertex(x1,y1,z1).setColor(r,g,b,fa); fillBB.addVertex(x0,y1,z1).setColor(r,g,b,fa);
+        // back (z0)
+        fillBB.addVertex(x0,y0,z0).setColor(r,g,b,fa); fillBB.addVertex(x1,y0,z0).setColor(r,g,b,fa);
+        fillBB.addVertex(x1,y1,z0).setColor(r,g,b,fa); fillBB.addVertex(x0,y1,z0).setColor(r,g,b,fa);
+        // left (x0)
+        fillBB.addVertex(x0,y0,z0).setColor(r,g,b,fa); fillBB.addVertex(x0,y0,z1).setColor(r,g,b,fa);
+        fillBB.addVertex(x0,y1,z1).setColor(r,g,b,fa); fillBB.addVertex(x0,y1,z0).setColor(r,g,b,fa);
+        // right (x1)
+        fillBB.addVertex(x1,y0,z0).setColor(r,g,b,fa); fillBB.addVertex(x1,y0,z1).setColor(r,g,b,fa);
+        fillBB.addVertex(x1,y1,z1).setColor(r,g,b,fa); fillBB.addVertex(x1,y1,z0).setColor(r,g,b,fa);
+        renderQuads(fillBB, pose, projection);
+
+        // Wireframe edges
+        BufferBuilder bb = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
         bb.addVertex(x0,y0,z0).setColor(r,g,b,a); bb.addVertex(x1,y0,z0).setColor(r,g,b,a);
         bb.addVertex(x1,y0,z0).setColor(r,g,b,a); bb.addVertex(x1,y0,z1).setColor(r,g,b,a);
         bb.addVertex(x1,y0,z1).setColor(r,g,b,a); bb.addVertex(x0,y0,z1).setColor(r,g,b,a);
@@ -816,6 +841,30 @@ public class FreeCam {
         return !mainHand.isEmpty() && mainHand.getItem() instanceof BlockItem;
     }
 
+    private void triggerAttack() {
+        if (mc.hitResult instanceof EntityHitResult ehr) {
+            mc.gameMode.attack(mc.player, ehr.getEntity());
+            mc.player.swing(InteractionHand.MAIN_HAND);
+        } else {
+            ((MixinMinecraftInvoker) mc).freecam$startAttack();
+        }
+    }
+
+    private void triggerUse() {
+        if (mc.hitResult instanceof EntityHitResult ehr) {
+            Entity entity = ehr.getEntity();
+            InteractionResult result = mc.gameMode.interactAt(mc.player, entity, ehr, InteractionHand.MAIN_HAND);
+            if (!result.consumesAction()) {
+                result = mc.gameMode.interact(mc.player, entity, InteractionHand.MAIN_HAND);
+            }
+            if (result.shouldSwing()) {
+                mc.player.swing(InteractionHand.MAIN_HAND);
+            }
+        } else {
+            ((MixinMinecraftInvoker) mc).freecam$startUseItem();
+        }
+    }
+
     private void handleBreakPlace() {
         InputConstants.Key bk = KeyBindings.breakKey.getKey();
         InputConstants.Key pk = KeyBindings.placeKey.getKey();
@@ -833,25 +882,23 @@ public class FreeCam {
             while (mc.options.keyPickItem.consumeClick()) {}
         }
 
-        MixinMinecraftInvoker invoker = (MixinMinecraftInvoker) mc;
-
         if (bk.equals(pk)) {
             boolean clicked = false;
             while (KeyBindings.breakKey.consumeClick()) { clicked = true; }
             while (KeyBindings.placeKey.consumeClick()) { clicked = true; }
             if (clicked) {
                 if (isMainHandPlaceable()) {
-                    invoker.freecam$startUseItem();
+                    triggerUse();
                 } else {
-                    invoker.freecam$startAttack();
+                    triggerAttack();
                 }
             }
         } else {
             while (KeyBindings.breakKey.consumeClick()) {
-                invoker.freecam$startAttack();
+                triggerAttack();
             }
             while (KeyBindings.placeKey.consumeClick()) {
-                invoker.freecam$startUseItem();
+                triggerUse();
             }
         }
     }
@@ -1092,6 +1139,24 @@ public class FreeCam {
     private void disableKey(KeyMapping key) {
         while (key.consumeClick()) {}
         key.setDown(false);
+    }
+
+    private void renderQuads(BufferBuilder bufferBuilder, Matrix4f pose, Matrix4f projection) {
+        RenderSystem.disableCull();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+
+        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+
+        SharedVertexBuffer.instance.bind();
+        SharedVertexBuffer.instance.upload(bufferBuilder.buildOrThrow());
+        SharedVertexBuffer.instance.drawWithShader(pose, projection, GameRenderer.getPositionColorShader());
+        VertexBuffer.unbind();
+
+        RenderSystem.disableBlend();
+        RenderSystem.enableCull();
+        RenderSystem.enableDepthTest();
     }
 
     private void renderLines(BufferBuilder bufferBuilder, Matrix4f pose, Matrix4f projection) {
