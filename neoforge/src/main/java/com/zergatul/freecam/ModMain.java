@@ -26,5 +26,13 @@ public class ModMain {
         event.register(KeyBindings.toggleEyeLock);
         event.register(KeyBindings.toggleFollowCam);
         event.register(KeyBindings.startPath);
+        event.register(KeyBindings.forceSelect);
+        event.register(KeyBindings.rotateLeft);
+        event.register(KeyBindings.rotateRight);
+        event.register(KeyBindings.rotateUp);
+        event.register(KeyBindings.rotateDown);
+        event.register(KeyBindings.viewBind);
+        event.register(KeyBindings.breakKey);
+        event.register(KeyBindings.placeKey);
     }
 }

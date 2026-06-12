@@ -33,6 +33,8 @@ public class FreeCamConfig {
     public double speedStrafe;
     public double speedVertical;
     public double inertia;
+    public boolean playerViewFollow;
+    public double highlightOpacity;
 
     public FreeCamConfig() {
         acceleration = DefaultAcceleration;
@@ -44,6 +46,8 @@ public class FreeCamConfig {
         speedStrafe = DefaultSpeedMultiplier;
         speedVertical = DefaultSpeedMultiplier;
         inertia = DefaultInertia;
+        playerViewFollow = true;
+        highlightOpacity = 1.0;
     }
 
     public void clamp() {
@@ -73,6 +77,8 @@ public class FreeCamConfig {
         copy.speedStrafe = speedStrafe;
         copy.speedVertical = speedVertical;
         copy.inertia = inertia;
+        copy.playerViewFollow = playerViewFollow;
+        copy.highlightOpacity = highlightOpacity;
         return copy;
     }
 
@@ -91,7 +97,9 @@ public class FreeCamConfig {
                     other.speedForward == speedForward &&
                     other.speedStrafe == speedStrafe &&
                     other.speedVertical == speedVertical &&
-                    other.inertia == inertia;
+                    other.inertia == inertia &&
+                    other.playerViewFollow == playerViewFollow &&
+                    other.highlightOpacity == highlightOpacity;
         } else {
             return false;
         }

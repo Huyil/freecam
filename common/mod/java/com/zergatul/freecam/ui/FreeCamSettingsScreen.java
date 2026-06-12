@@ -39,6 +39,10 @@ public class FreeCamSettingsScreen extends Screen {
     private static final Component SPEED_VERTICAL = Component.translatable("options.freecam.settings.speed.vertical");
     private static final Component INERTIA = Component.translatable("options.freecam.settings.inertia");
     private static final Component INERTIA_TOOLTIP = Component.translatable("options.freecam.settings.inertia.tooltip");
+    private static final Component VIEW_FOLLOW = Component.translatable("options.freecam.settings.viewfollow");
+    private static final Component VIEW_FOLLOW_TOOLTIP = Component.translatable("options.freecam.settings.viewfollow.tooltip");
+    private static final Component HIGHLIGHT = Component.translatable("options.freecam.settings.highlight");
+    private static final Component HIGHLIGHT_TOOLTIP = Component.translatable("options.freecam.settings.highlight.tooltip");
     private static final int BUTTON_WIDTH = 150;
     private static final int BUTTON_HEIGHT = 20;
     private static final int DONE_BUTTON_WIDTH = 200;
@@ -116,6 +120,28 @@ public class FreeCamSettingsScreen extends Screen {
                 .create(column2, y, BUTTON_WIDTH, BUTTON_HEIGHT, SHOW_MY_NAME, (button, value) -> {
                     FreeCam.instance.getConfig().showMyName = value;
                 }));
+
+        y += LINE_HEIGHT;
+        addRenderableWidget(CycleButton.onOffBuilder()
+                .withInitialValue(FreeCam.instance.getConfig().playerViewFollow)
+                .withTooltip(value -> Tooltip.create(VIEW_FOLLOW_TOOLTIP))
+                .create(column1, y, BUTTON_WIDTH, BUTTON_HEIGHT, VIEW_FOLLOW, (button, value) -> {
+                    FreeCam.instance.getConfig().playerViewFollow = value;
+                }));
+        addRenderableWidget(new SliderButton.Builder()
+                .position(column2, y)
+                .size(BUTTON_WIDTH, BUTTON_HEIGHT)
+                .message(HIGHLIGHT)
+                .tooltip(Tooltip.create(HIGHLIGHT_TOOLTIP))
+                .mapper(new LinearValueMapper(0.0, 1.0) {
+                    @Override
+                    public String toDisplay(double value) {
+                        return Integer.toString((int) Math.round(toSettingValue(value) * 100)) + "%";
+                    }
+                })
+                .setter((button, value) -> FreeCam.instance.getConfig().highlightOpacity = value)
+                .value(FreeCam.instance.getConfig().highlightOpacity)
+                .create());
 
         y += 2 * LINE_HEIGHT;
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> this.onClose())

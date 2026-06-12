@@ -16,6 +16,7 @@
     "MixinLevelRenderer",
     "MixinLivingEntityRenderer",
     "MixinMinecraft",
+    "MixinMinecraftInvoker",
     "MixinMouseHandler",
     "MixinOptions"
   ]

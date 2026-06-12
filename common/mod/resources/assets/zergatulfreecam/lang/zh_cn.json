@@ -5,6 +5,14 @@
   "key.zergatul.freecam.eyelock.toggle": "切换视线锁定",
   "key.zergatul.freecam.followcam.toggle": "切换跟随相机",
   "key.zergatul.freecam.start.path": "开始路径",
+  "key.zergatul.freecam.forceselect": "强制穿透选择",
+  "key.zergatul.freecam.rotateleft": "向左旋转",
+  "key.zergatul.freecam.rotateright": "向右旋转",
+  "key.zergatul.freecam.rotateup": "向上旋转",
+  "key.zergatul.freecam.rotatedown": "向下旋转",
+  "key.zergatul.freecam.viewbind": "视角绑定（按住旋转）",
+  "key.zergatul.freecam.break": "破坏方块/攻击",
+  "key.zergatul.freecam.place": "放置方块/使用物品",
   "options.freecam.settings.title": "自由视角设置",
   "options.freecam.settings.acceleration": "加速度",
   "options.freecam.settings.acceleration.tooltip": "单位：方块/秒²",
@@ -28,5 +36,9 @@
   "options.freecam.settings.speed.strafe": "左右速度",
   "options.freecam.settings.speed.vertical": "上下速度",
   "options.freecam.settings.inertia": "减速惯性",
-  "options.freecam.settings.inertia.tooltip": "仅影响松开按键后的减速过程。\n0%=瞬间停止，100%=最大惯性（平滑减速）"
+  "options.freecam.settings.inertia.tooltip": "仅影响松开按键后的减速过程。\n0%=瞬间停止，100%=最大惯性（平滑减速）",
+  "options.freecam.settings.viewfollow": "玩家视角跟随",
+  "options.freecam.settings.viewfollow.tooltip": "玩家身体面向光标指向的方块/实体",
+  "options.freecam.settings.highlight": "方块高亮",
+  "options.freecam.settings.highlight.tooltip": "0%=关闭，100%=完全不透明"
 }

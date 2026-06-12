@@ -5,6 +5,14 @@
   "key.zergatul.freecam.eyelock.toggle": "Toggle Eye Lock",
   "key.zergatul.freecam.followcam.toggle": "Toggle Follow Camera",
   "key.zergatul.freecam.start.path": "Start Path",
+  "key.zergatul.freecam.forceselect": "Force Select (Through Wall)",
+  "key.zergatul.freecam.rotateleft": "Rotate Left",
+  "key.zergatul.freecam.rotateright": "Rotate Right",
+  "key.zergatul.freecam.rotateup": "Rotate Up",
+  "key.zergatul.freecam.rotatedown": "Rotate Down",
+  "key.zergatul.freecam.viewbind": "View Bind (Hold to Rotate)",
+  "key.zergatul.freecam.break": "Break Block/Attack",
+  "key.zergatul.freecam.place": "Place Block/Use Item",
   "options.freecam.settings.title": "FreeCam Settings",
   "options.freecam.settings.acceleration": "Acceleration",
   "options.freecam.settings.acceleration.tooltip": "In blocks per second squared",
@@ -28,5 +36,9 @@
   "options.freecam.settings.speed.strafe": "Strafe Speed",
   "options.freecam.settings.speed.vertical": "Up/Down Speed",
   "options.freecam.settings.inertia": "Decel Inertia",
-  "options.freecam.settings.inertia.tooltip": "Only affects deceleration when releasing keys.\n0%=instant stop, 100%=max inertia (smooth deceleration)"
+  "options.freecam.settings.inertia.tooltip": "Only affects deceleration when releasing keys.\n0%=instant stop, 100%=max inertia (smooth deceleration)",
+  "options.freecam.settings.viewfollow": "Player View Follow",
+  "options.freecam.settings.viewfollow.tooltip": "Player body faces the block/entity under cursor",
+  "options.freecam.settings.highlight": "Block Highlight",
+  "options.freecam.settings.highlight.tooltip": "0%=off, 100%=full opacity"
 }
