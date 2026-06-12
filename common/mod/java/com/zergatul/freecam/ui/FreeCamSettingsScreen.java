@@ -3,7 +3,6 @@ package com.zergatul.freecam.ui;
 import com.zergatul.freecam.ConfigRepository;
 import com.zergatul.freecam.FreeCam;
 import com.zergatul.freecam.FreeCamConfig;
-import net.minecraft.client.InputType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
@@ -30,17 +29,22 @@ public class FreeCamSettingsScreen extends Screen {
     private static final Component INPUT = Component.translatable("options.freecam.settings.remember.input");
     private static final Component INPUT_TOOLTIP = Component.translatable("options.freecam.settings.remember.input.tooltip");
     private static final Component FLY_MODE = Component.translatable("options.freecam.settings.flymode");
-    private static final Component FLY_MODE_DEFAULT = Component.translatable("options.freecam.settings.flymode.default");
+    private static final Component FLY_MODE_CREATIVE = Component.translatable("options.freecam.settings.flymode.creative");
+    private static final Component FLY_MODE_RTS = Component.translatable("options.freecam.settings.flymode.rts");
     private static final Component FLY_MODE_SPECTATOR = Component.translatable("options.freecam.settings.flymode.spectator");
     private static final Component SHOW_MY_NAME = Component.translatable("options.freecam.settings.show.name");
     private static final Component SHOW_MY_NAME_TOOLTIP = Component.translatable("options.freecam.settings.show.name.tooltip");
+    private static final Component SPEED_FORWARD = Component.translatable("options.freecam.settings.speed.forward");
+    private static final Component SPEED_STRAFE = Component.translatable("options.freecam.settings.speed.strafe");
+    private static final Component SPEED_VERTICAL = Component.translatable("options.freecam.settings.speed.vertical");
+    private static final Component INERTIA = Component.translatable("options.freecam.settings.inertia");
+    private static final Component INERTIA_TOOLTIP = Component.translatable("options.freecam.settings.inertia.tooltip");
     private static final int BUTTON_WIDTH = 150;
     private static final int BUTTON_HEIGHT = 20;
     private static final int DONE_BUTTON_WIDTH = 200;
     private static final int GAP = 12;
     private static final int TITLE_TOP = 20;
     private static final int BUTTONS_TOP = 40;
-    private static final int LINE_WIDTH = 2 * BUTTON_WIDTH + GAP;
     private static final int LINE_HEIGHT = BUTTON_HEIGHT + GAP / 2;
 
     private final Screen previous;
@@ -69,41 +73,94 @@ public class FreeCamSettingsScreen extends Screen {
                 TITLE, this.font));
 
         int y = BUTTONS_TOP;
+
+        addSpeedSlider(column1, y, SPEED_FORWARD, config -> config.speedForward, (cfg, v) -> cfg.speedForward = v);
+        addExpSlider(column2, y, MAX_SPEED, MAX_SPEED_TOOLTIP, config -> config.maxSpeed, (cfg, v) -> cfg.maxSpeed = v, FreeCamConfig.MinMaxSpeed, FreeCamConfig.DefaultMaxSpeed, FreeCamConfig.MaxMaxSpeed);
+
+        y += LINE_HEIGHT;
+        addSpeedSlider(column1, y, SPEED_STRAFE, config -> config.speedStrafe, (cfg, v) -> cfg.speedStrafe = v);
+        addExpSlider(column2, y, ACCELERATION, ACCELERATION_TOOLTIP, config -> config.acceleration, (cfg, v) -> cfg.acceleration = v, FreeCamConfig.MinAcceleration, FreeCamConfig.DefaultAcceleration, FreeCamConfig.MaxAcceleration);
+
+        y += LINE_HEIGHT;
+        addSpeedSlider(column1, y, SPEED_VERTICAL, config -> config.speedVertical, (cfg, v) -> cfg.speedVertical = v);
+        addSlowdownSlider(column2, y);
+
+        y += LINE_HEIGHT;
+        addInertiaSlider(column1, y);
+        addFlyModeButton(column2, y);
+
+        y += LINE_HEIGHT;
+        addRenderableWidget(CycleButton.onOffBuilder()
+                .withInitialValue(FreeCam.instance.getConfig().renderHands)
+                .withTooltip(value -> Tooltip.create(HANDS_TOOLTIP))
+                .create(column1, y, BUTTON_WIDTH, BUTTON_HEIGHT, HANDS, (button, value) -> {
+                    FreeCam.instance.getConfig().renderHands = value;
+                }));
+        addRenderableWidget(CycleButton.onOffBuilder()
+                .withInitialValue(FreeCam.instance.getConfig().target)
+                .withTooltip(value -> Tooltip.create(TARGET_TOOLTIP))
+                .create(column2, y, BUTTON_WIDTH, BUTTON_HEIGHT, TARGET, (button, value) -> {
+                    FreeCam.instance.getConfig().target = value;
+                }));
+
+        y += LINE_HEIGHT;
+        addRenderableWidget(CycleButton.onOffBuilder()
+                .withInitialValue(FreeCam.instance.getConfig().rememberInputState)
+                .withTooltip(value -> Tooltip.create(INPUT_TOOLTIP))
+                .create(column1, y, BUTTON_WIDTH, BUTTON_HEIGHT, INPUT, (button, value) -> {
+                    FreeCam.instance.getConfig().rememberInputState = value;
+                }));
+        addRenderableWidget(CycleButton.onOffBuilder()
+                .withInitialValue(FreeCam.instance.getConfig().showMyName)
+                .withTooltip(value -> Tooltip.create(SHOW_MY_NAME_TOOLTIP))
+                .create(column2, y, BUTTON_WIDTH, BUTTON_HEIGHT, SHOW_MY_NAME, (button, value) -> {
+                    FreeCam.instance.getConfig().showMyName = value;
+                }));
+
+        y += 2 * LINE_HEIGHT;
+        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> this.onClose())
+                .pos((width - DONE_BUTTON_WIDTH) / 2, y)
+                .size(DONE_BUTTON_WIDTH, BUTTON_HEIGHT)
+                .build());
+    }
+
+    private void addSpeedSlider(int x, int y, Component label,
+                                java.util.function.Function<FreeCamConfig, Double> getter,
+                                java.util.function.BiConsumer<FreeCamConfig, Double> setter) {
         addRenderableWidget(new SliderButton.Builder()
-                .position(column1, y)
-                .size(LINE_WIDTH, BUTTON_HEIGHT)
-                .message(ACCELERATION)
-                .tooltip(Tooltip.create(ACCELERATION_TOOLTIP))
-                .mapper(new ExponentialValueMapper(FreeCamConfig.MinAcceleration, FreeCamConfig.DefaultAcceleration, FreeCamConfig.MaxAcceleration) {
+                .position(x, y)
+                .size(BUTTON_WIDTH, BUTTON_HEIGHT)
+                .message(label)
+                .mapper(new LinearValueMapper(FreeCamConfig.MinSpeedMultiplier, FreeCamConfig.MaxSpeedMultiplier))
+                .setter((button, value) -> setter.accept(FreeCam.instance.getConfig(), value))
+                .value(getter.apply(FreeCam.instance.getConfig()))
+                .create());
+    }
+
+    private void addExpSlider(int x, int y, Component label, Component tooltip,
+                              java.util.function.Function<FreeCamConfig, Double> getter,
+                              java.util.function.BiConsumer<FreeCamConfig, Double> setter,
+                              double min, double mid, double max) {
+        addRenderableWidget(new SliderButton.Builder()
+                .position(x, y)
+                .size(BUTTON_WIDTH, BUTTON_HEIGHT)
+                .message(label)
+                .tooltip(Tooltip.create(tooltip))
+                .mapper(new ExponentialValueMapper(min, mid, max) {
                     @Override
                     public String toDisplay(double value) {
                         return String.format("%.1f", toSettingValue(value));
                     }
                 })
-                .setter((button, value) -> FreeCam.instance.getConfig().acceleration = value)
-                .value(FreeCam.instance.getConfig().acceleration)
+                .setter((button, value) -> setter.accept(FreeCam.instance.getConfig(), value))
+                .value(getter.apply(FreeCam.instance.getConfig()))
                 .create());
+    }
 
-        y += LINE_HEIGHT;
+    private void addSlowdownSlider(int x, int y) {
         addRenderableWidget(new SliderButton.Builder()
-                .position(column1, y)
-                .size(LINE_WIDTH, BUTTON_HEIGHT)
-                .message(MAX_SPEED)
-                .tooltip(Tooltip.create(MAX_SPEED_TOOLTIP))
-                .mapper(new ExponentialValueMapper(FreeCamConfig.MinMaxSpeed, FreeCamConfig.DefaultMaxSpeed, FreeCamConfig.MaxMaxSpeed) {
-                    @Override
-                    public String toDisplay(double value) {
-                        return String.format("%.1f", toSettingValue(value));
-                    }
-                })
-                .setter((button, value) -> FreeCam.instance.getConfig().maxSpeed = value)
-                .value(FreeCam.instance.getConfig().maxSpeed)
-                .create());
-
-        y += LINE_HEIGHT;
-        addRenderableWidget(new SliderButton.Builder()
-                .position(column1, y)
-                .size(LINE_WIDTH, BUTTON_HEIGHT)
+                .position(x, y)
+                .size(BUTTON_WIDTH, BUTTON_HEIGHT)
                 .message(SLOWDOWN)
                 .tooltipProvider((value, mapper) -> {
                     double factor = mapper.toSettingValue(value);
@@ -124,48 +181,48 @@ public class FreeCamSettingsScreen extends Screen {
                 .setter((button, value) -> FreeCam.instance.getConfig().slowdownFactor = value)
                 .value(FreeCam.instance.getConfig().slowdownFactor)
                 .create());
+    }
 
-        y += LINE_HEIGHT;
-        addRenderableWidget(CycleButton.onOffBuilder()
-                .withInitialValue(FreeCam.instance.getConfig().renderHands)
-                .withTooltip(value -> Tooltip.create(HANDS_TOOLTIP))
-                .create(column1, y, BUTTON_WIDTH, BUTTON_HEIGHT, HANDS, (button, value) -> {
-                    FreeCam.instance.getConfig().renderHands = value;
-                }));
-        addRenderableWidget(CycleButton.onOffBuilder()
-                .withInitialValue(FreeCam.instance.getConfig().target)
-                .withTooltip(value -> Tooltip.create(TARGET_TOOLTIP))
-                .create(column2, y, BUTTON_WIDTH, BUTTON_HEIGHT, TARGET, (button, value) -> {
-                    FreeCam.instance.getConfig().target = value;
-                }));
+    private void addInertiaSlider(int x, int y) {
+        addRenderableWidget(new SliderButton.Builder()
+                .position(x, y)
+                .size(BUTTON_WIDTH, BUTTON_HEIGHT)
+                .message(INERTIA)
+                .tooltip(Tooltip.create(INERTIA_TOOLTIP))
+                .mapper(new LinearValueMapper(FreeCamConfig.MinInertia, FreeCamConfig.MaxInertia) {
+                    @Override
+                    public String toDisplay(double value) {
+                        return Integer.toString((int) Math.round(toSettingValue(value) * 100)) + "%";
+                    }
+                })
+                .setter((button, value) -> FreeCam.instance.getConfig().inertia = value)
+                .value(FreeCam.instance.getConfig().inertia)
+                .create());
+    }
 
-        y += LINE_HEIGHT;
-        addRenderableWidget(new CycleButton.Builder<Boolean>(b -> b ? FLY_MODE_SPECTATOR : FLY_MODE_DEFAULT)
-                .withValues(false, true)
-                .withInitialValue(FreeCam.instance.getConfig().spectatorMovement)
-                .create(column1, y, BUTTON_WIDTH, BUTTON_HEIGHT, FLY_MODE, (button, value) -> {
-                    FreeCam.instance.getConfig().spectatorMovement = value;
+    private void addFlyModeButton(int x, int y) {
+        FreeCamConfig config = FreeCam.instance.getConfig();
+        int initialMode;
+        if (config.rtsMode) {
+            initialMode = 1;
+        } else if (config.spectatorMovement) {
+            initialMode = 2;
+        } else {
+            initialMode = 0;
+        }
+        addRenderableWidget(new CycleButton.Builder<Integer>(mode -> switch (mode) {
+            case 1 -> FLY_MODE_RTS;
+            case 2 -> FLY_MODE_SPECTATOR;
+            default -> FLY_MODE_CREATIVE;
+        })
+                .withValues(0, 1, 2)
+                .withInitialValue(initialMode)
+                .create(x, y, BUTTON_WIDTH, BUTTON_HEIGHT, FLY_MODE, (button, value) -> {
+                    FreeCamConfig cfg = FreeCam.instance.getConfig();
+                    cfg.rtsMode = (value == 1);
+                    cfg.spectatorMovement = (value == 2);
+                    FreeCam.instance.onRtsModeChanged();
                 }));
-        addRenderableWidget(CycleButton.onOffBuilder()
-                .withInitialValue(FreeCam.instance.getConfig().rememberInputState)
-                .withTooltip(value -> Tooltip.create(INPUT_TOOLTIP))
-                .create(column2, y, BUTTON_WIDTH, BUTTON_HEIGHT, INPUT, (button, value) -> {
-                    FreeCam.instance.getConfig().rememberInputState = value;
-                }));
-
-        y += LINE_HEIGHT;
-        addRenderableWidget(CycleButton.onOffBuilder()
-                .withInitialValue(FreeCam.instance.getConfig().showMyName)
-                .withTooltip(value -> Tooltip.create(SHOW_MY_NAME_TOOLTIP))
-                .create(column1, y, BUTTON_WIDTH, BUTTON_HEIGHT, SHOW_MY_NAME, (button, value) -> {
-                    FreeCam.instance.getConfig().showMyName = value;
-                }));
-
-        y += 2 * LINE_HEIGHT;
-        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> this.onClose())
-                .pos((width - DONE_BUTTON_WIDTH) / 2, y)
-                .size(DONE_BUTTON_WIDTH, BUTTON_HEIGHT)
-                .build());
     }
 
     @Override

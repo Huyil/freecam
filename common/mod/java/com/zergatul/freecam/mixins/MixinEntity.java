@@ -27,7 +27,12 @@ public abstract class MixinEntity {
     private void onGetViewVector(float p_20253_, CallbackInfoReturnable<Vec3> info) {
         FreeCam freeCam = FreeCam.instance;
         if (freeCam.shouldOverrideCameraEntityPosition((Entity) (Object) this)) {
-            info.setReturnValue(this.calculateViewVector(freeCam.getXRot(), freeCam.getYRot()));
+            Vec3 rtsDir = freeCam.getRTSPickDirection();
+            if (rtsDir != null) {
+                info.setReturnValue(rtsDir);
+            } else {
+                info.setReturnValue(this.calculateViewVector(freeCam.getXRot(), freeCam.getYRot()));
+            }
         }
     }
 }

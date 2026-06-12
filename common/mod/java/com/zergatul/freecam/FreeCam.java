@@ -1,5 +1,6 @@
 package com.zergatul.freecam;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.ChatFormatting;
@@ -18,6 +19,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 import java.util.List;
@@ -57,6 +59,16 @@ public class FreeCam {
     private boolean moveAlongPath;
     private long pathStartTime;
     private long dontMoveFreeCamBefore;
+    private Vec3 mouseRayDirection;
+    private boolean middleActive;
+    private boolean middleDragged;
+    private double middleStartX, middleStartY;
+    private double prevDragX, prevDragY;
+    private boolean middleTickWasDown;
+    private boolean prevArrowLeft, prevArrowRight, prevArrowUp, prevArrowDown;
+    private float targetYRot, targetXRot;
+    private int rtsUseBoostCounter;
+    private int lastBoostY = Integer.MIN_VALUE;
 
     private FreeCam() {
 
@@ -199,6 +211,14 @@ public class FreeCam {
         leftVelocity = 0;
         upVelocity = 0;
         lastTime = 0;
+
+        targetYRot = yRot;
+        targetXRot = xRot;
+
+        if (config.rtsMode) {
+            mouseRayDirection = new Vec3(0, 0, 1);
+            mc.mouseHandler.releaseMouse();
+        }
     }
 
     public void disable() {
@@ -216,6 +236,17 @@ public class FreeCam {
             mc.gameRenderer.checkEntityPostEffect(mc.options.getCameraType().isFirstPerson() ? mc.getCameraEntity() : null);
         }
         oldCameraType = null;
+
+        if (config.rtsMode) {
+            mouseRayDirection = null;
+            mc.mouseHandler.grabMouse();
+            middleActive = false;
+            middleDragged = false;
+            middleTickWasDown = false;
+        }
+
+        targetYRot = 0;
+        targetXRot = 0;
     }
 
     public void onHandleKeyBindings() {
@@ -244,6 +275,9 @@ public class FreeCam {
 
     public boolean onPlayerTurn(double yRot, double xRot) {
         if (active && !cameraLock && !followCamera) {
+            if (config.rtsMode) {
+                return false;
+            }
             if (!eyeLock && !moveAlongPath) {
                 this.xRot += (float) xRot * 0.15F;
                 this.yRot += (float) yRot * 0.15F;
@@ -258,6 +292,7 @@ public class FreeCam {
 
     public boolean onRenderCrosshairModifyIsFirstPerson(boolean value) {
         if (active) {
+            if (config.rtsMode) return false;
             return !cameraLock && !eyeLock && !followCamera && config.target;
         } else {
             return value;
@@ -314,27 +349,47 @@ public class FreeCam {
             float forwardImpulse = !cameraLock ? (input.up ? 1 : 0) + (input.down ? -1 : 0) : 0;
             float leftImpulse = !cameraLock ? (input.left ? 1 : 0) + (input.right ? -1 : 0) : 0;
             float upImpulse = !cameraLock ? ((input.jumping ? 1 : 0) + (input.shiftKeyDown ? -1 : 0)) : 0;
-            double slowdown = Math.pow(config.slowdownFactor, frameTime);
+
+            double fwdMax = config.maxSpeed * config.speedForward;
+            double strafeMax = config.maxSpeed * config.speedStrafe;
+            double vertMax = config.maxSpeed * config.speedVertical;
+
+            double slowdown;
+            if (config.inertia <= 0.001) {
+                slowdown = 0.0;
+            } else {
+                double slowPerSec = Math.pow(config.slowdownFactor, 1.0 / config.inertia);
+                slowdown = Math.pow(slowPerSec, frameTime);
+            }
             forwardVelocity = combineMovement(forwardVelocity, forwardImpulse, frameTime, config.acceleration, slowdown);
             leftVelocity = combineMovement(leftVelocity, leftImpulse, frameTime, config.acceleration, slowdown);
             upVelocity = combineMovement(upVelocity, upImpulse, frameTime, config.acceleration, slowdown);
+            forwardVelocity = Mth.clamp(forwardVelocity, -fwdMax, fwdMax);
+            leftVelocity = Mth.clamp(leftVelocity, -strafeMax, strafeMax);
+            upVelocity = Mth.clamp(upVelocity, -vertMax, vertMax);
 
-            double dx = (double) this.forwards.x() * forwardVelocity + (double) this.left.x() * leftVelocity;
-            double dy = (double) this.forwards.y() * forwardVelocity + upVelocity + (double) this.left.y() * leftVelocity;
-            double dz = (double) this.forwards.z() * forwardVelocity + (double) this.left.z() * leftVelocity;
+            double dx;
+            double dy;
+            double dz;
+            if (config.rtsMode) {
+                float fwdX = this.forwards.x();
+                float fwdZ = this.forwards.z();
+                float fwdLen = (float)Math.sqrt(fwdX * fwdX + fwdZ * fwdZ);
+                if (fwdLen > 1e-4f) {
+                    fwdX /= fwdLen;
+                    fwdZ /= fwdLen;
+                }
+                dx = fwdX * forwardVelocity + (double) this.left.x() * leftVelocity;
+                dy = upVelocity;
+                dz = fwdZ * forwardVelocity + (double) this.left.z() * leftVelocity;
+            } else {
+                dx = (double) this.forwards.x() * forwardVelocity + (double) this.left.x() * leftVelocity;
+                dy = (double) this.forwards.y() * forwardVelocity + upVelocity + (double) this.left.y() * leftVelocity;
+                dz = (double) this.forwards.z() * forwardVelocity + (double) this.left.z() * leftVelocity;
+            }
             dx *= frameTime;
             dy *= frameTime;
             dz *= frameTime;
-            double speed = new Vec3(dx, dy, dz).length() / frameTime;
-            if (speed > config.maxSpeed) {
-                double factor = config.maxSpeed / speed;
-                forwardVelocity *= factor;
-                leftVelocity *= factor;
-                upVelocity *= factor;
-                dx *= factor;
-                dy *= factor;
-                dz *= factor;
-            }
             if (!config.rememberInputState || dontMoveFreeCamBefore < currTime) {
                 x += dx;
                 y += dy;
@@ -343,11 +398,119 @@ public class FreeCam {
         }
 
         applyEyeLock(delta.getGameTimeDeltaPartialTick(true));
+
+        if (config.rtsMode && !cameraLock && !eyeLock && !followCamera && !moveAlongPath) {
+            boolean arrowLeft = isKeyDown(GLFW.GLFW_KEY_LEFT);
+            boolean arrowRight = isKeyDown(GLFW.GLFW_KEY_RIGHT);
+            boolean arrowUp = isKeyDown(GLFW.GLFW_KEY_UP);
+            boolean arrowDown = isKeyDown(GLFW.GLFW_KEY_DOWN);
+
+            if (arrowLeft && !prevArrowLeft) {
+                targetYRot = (float)(Math.floor((targetYRot - 0.01) / 15.0) * 15.0);
+            }
+            if (arrowRight && !prevArrowRight) {
+                targetYRot = (float)(Math.ceil((targetYRot + 0.01) / 15.0) * 15.0);
+            }
+            if (arrowUp && !prevArrowUp) {
+                targetXRot = (float)(Math.floor((targetXRot - 0.01) / 15.0) * 15.0);
+                if (targetXRot < -90) targetXRot = -90;
+            }
+            if (arrowDown && !prevArrowDown) {
+                targetXRot = (float)(Math.ceil((targetXRot + 0.01) / 15.0) * 15.0);
+                if (targetXRot > 90) targetXRot = 90;
+            }
+
+            prevArrowLeft = arrowLeft;
+            prevArrowRight = arrowRight;
+            prevArrowUp = arrowUp;
+            prevArrowDown = arrowDown;
+
+            double currX = mc.mouseHandler.xpos();
+            double currY = mc.mouseHandler.ypos();
+            boolean middleDown = isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+
+            if (middleDown) {
+                if (!middleActive) {
+                    middleActive = true;
+                    middleStartX = currX;
+                    middleStartY = currY;
+                    middleDragged = false;
+                    prevDragX = currX;
+                    prevDragY = currY;
+                } else {
+                    double distSq = (currX - middleStartX) * (currX - middleStartX) +
+                                    (currY - middleStartY) * (currY - middleStartY);
+                    if (distSq > 25.0) {
+                        middleDragged = true;
+                    }
+                    if (middleDragged) {
+                        double dx = currX - prevDragX;
+                        double dy = currY - prevDragY;
+                        targetYRot += (float)dx * 0.3f;
+                        targetXRot = Mth.clamp(targetXRot + (float)dy * 0.3f, -90, 90);
+                    }
+                    prevDragX = currX;
+                    prevDragY = currY;
+                }
+            } else {
+                middleActive = false;
+            }
+
+            float lerp = 1.0f - (float)Math.exp(-frameTime * 18.0);
+            float deltaY = targetYRot - yRot;
+            float deltaX = targetXRot - xRot;
+            if (Math.abs(deltaY) >= 0.02f || Math.abs(deltaX) >= 0.02f) {
+                yRot += deltaY * lerp;
+                xRot += deltaX * lerp;
+                calculateVectors();
+            } else if (yRot != targetYRot || xRot != targetXRot) {
+                yRot = targetYRot;
+                xRot = targetXRot;
+                calculateVectors();
+            }
+
+            computeMouseRayDirection();
+        }
     }
 
     public void onClientTickStart() {
         if (active) {
             disableKey(mc.options.keyTogglePerspective);
+
+            if (config.rtsMode) {
+                boolean middleDown = isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+                if (middleDown) {
+                    disableKey(mc.options.keyPickItem);
+                    middleTickWasDown = true;
+                } else {
+                    if (middleTickWasDown && !middleDragged) {
+                        mc.options.keyPickItem.click(InputConstants.Type.MOUSE.getOrCreate(GLFW.GLFW_MOUSE_BUTTON_MIDDLE));
+                    }
+                    middleTickWasDown = false;
+                    middleDragged = false;
+                }
+
+                if (isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
+                    int currentY = Integer.MIN_VALUE;
+                    if (mc.hitResult instanceof BlockHitResult bhr) {
+                        currentY = bhr.getBlockPos().getY();
+                    }
+                    if (currentY == lastBoostY) {
+                        rtsUseBoostCounter++;
+                        if (rtsUseBoostCounter >= 2) {
+                            rtsUseBoostCounter = 0;
+                            mc.options.keyUse.click(InputConstants.Type.MOUSE.getOrCreate(GLFW.GLFW_MOUSE_BUTTON_RIGHT));
+                        }
+                    } else {
+                        rtsUseBoostCounter = 0;
+                    }
+                    lastBoostY = currentY;
+                } else {
+                    rtsUseBoostCounter = 0;
+                    lastBoostY = Integer.MIN_VALUE;
+                }
+            }
+
             playerInput.tick(false, 0);
         }
     }
@@ -400,7 +563,7 @@ public class FreeCam {
     }
 
     public boolean shouldOverrideCameraEntityPosition(Entity entity) {
-        if (active && !cameraLock && !eyeLock && !followCamera && config.target) {
+        if (active && !cameraLock && !eyeLock && !followCamera && (config.target || config.rtsMode)) {
             return entity == mc.getCameraEntity() && gameRendererPicking || freecamHitResultPicking;
         } else {
             return false;
@@ -422,7 +585,7 @@ public class FreeCam {
         if (cameraLock || eyeLock || followCamera) {
             return;
         }
-        if (!config.target) {
+        if (!config.target && !config.rtsMode) {
             return;
         }
 
@@ -447,6 +610,78 @@ public class FreeCam {
         finally {
             freecamHitResultPicking = false;
         }
+    }
+
+    public Vec3 getRTSPickDirection() {
+        if (active && config.rtsMode && mouseRayDirection != null) {
+            return mouseRayDirection;
+        }
+        return null;
+    }
+
+    public boolean shouldPreventMouseGrab() {
+        return active && config.rtsMode;
+    }
+
+    public boolean shouldForceContinueAttack() {
+        return active && config.rtsMode;
+    }
+
+    public void onRtsModeChanged() {
+        if (active) {
+            if (config.rtsMode) {
+                if (mouseRayDirection == null) {
+                    mouseRayDirection = new Vec3(0, 0, 1);
+                }
+                if (mc.screen == null) {
+                    mc.mouseHandler.releaseMouse();
+                }
+            } else {
+                mouseRayDirection = null;
+                middleActive = false;
+                middleDragged = false;
+                middleTickWasDown = false;
+                if (mc.screen == null) {
+                    mc.mouseHandler.grabMouse();
+                }
+            }
+        }
+    }
+
+    private void computeMouseRayDirection() {
+        double mouseX = mc.mouseHandler.xpos();
+        double mouseY = mc.mouseHandler.ypos();
+
+        int screenWidth = mc.getWindow().getScreenWidth();
+        int screenHeight = mc.getWindow().getScreenHeight();
+
+        if (screenWidth <= 0 || screenHeight <= 0) {
+            mouseRayDirection = new Vec3(0, 0, 1);
+            return;
+        }
+
+        float ndcX = (float) (2.0 * mouseX / screenWidth - 1.0);
+        float ndcY = (float) (1.0 - 2.0 * mouseY / screenHeight);
+
+        double fovRad = mc.options.fov().get() * Math.PI / 180.0;
+        double tanHalfFov = Math.tan(fovRad / 2.0);
+        double aspect = (double) screenWidth / screenHeight;
+
+        float dx = (float)(ndcX * tanHalfFov * aspect);
+        float dy = (float)(ndcY * tanHalfFov);
+
+        Vector3f dir = new Vector3f(-dx, dy, 1.0f).normalize();
+        dir.rotate(rotation);
+
+        mouseRayDirection = new Vec3(dir.x(), dir.y(), dir.z());
+    }
+
+    private boolean isKeyDown(int keyCode) {
+        return GLFW.glfwGetKey(mc.getWindow().getWindow(), keyCode) == GLFW.GLFW_PRESS;
+    }
+
+    private boolean isMouseButtonDown(int button) {
+        return GLFW.glfwGetMouseButton(mc.getWindow().getWindow(), button) == GLFW.GLFW_PRESS;
     }
 
     public void onBeforeGameRendererPick() {
@@ -495,7 +730,7 @@ public class FreeCam {
     }
 
     private void calculateVectors() {
-        rotation.rotationYXZ(-yRot * ((float)Math.PI / 180F), (config.spectatorMovement ? 0 : xRot) * ((float)Math.PI / 180F), 0.0F);
+        rotation.rotationYXZ(-yRot * ((float)Math.PI / 180F), (config.spectatorMovement ? xRot : 0) * ((float)Math.PI / 180F), 0.0F);
         forwards.set(0.0F, 0.0F, 1.0F).rotate(rotation);
         up.set(0.0F, 1.0F, 0.0F).rotate(rotation);
         left.set(1.0F, 0.0F, 0.0F).rotate(rotation);

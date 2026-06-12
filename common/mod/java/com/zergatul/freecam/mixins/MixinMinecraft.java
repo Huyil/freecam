@@ -1,5 +1,6 @@
 package com.zergatul.freecam.mixins;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.zergatul.freecam.FreeCam;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ReceivingLevelScreen;
@@ -26,5 +27,15 @@ public abstract class MixinMinecraft {
     @Inject(at = @At("TAIL"), method = "handleKeybinds")
     private void onHandleKeyBindings(CallbackInfo info) {
         FreeCam.instance.onHandleKeyBindings();
+    }
+
+    @ModifyExpressionValue(
+            method = "handleKeybinds",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;isMouseGrabbed()Z"))
+    private boolean freecam$onMouseGrabbedCheckForAttack(boolean original) {
+        if (FreeCam.instance.shouldForceContinueAttack()) {
+            return true;
+        }
+        return original;
     }
 }

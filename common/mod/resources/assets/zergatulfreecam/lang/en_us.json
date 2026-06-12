@@ -16,11 +16,17 @@
   "options.freecam.settings.target.tooltip": "Allows you to target blocks/entities by using FreeCam position",
   "options.freecam.settings.hands": "Render Hands",
   "options.freecam.settings.hands.tooltip": "Show/hide player hands while in FreeCam",
-  "options.freecam.settings.remember.input": "Remember Input State",
+  "options.freecam.settings.remember.input": "Remember Input",
   "options.freecam.settings.remember.input.tooltip": "Remembers state of WASD/Jump/Crouch keys when you activate FreeCam",
   "options.freecam.settings.flymode": "Fly Mode",
-  "options.freecam.settings.flymode.default": "Default",
+  "options.freecam.settings.flymode.creative": "Creative",
+  "options.freecam.settings.flymode.rts": "RTS",
   "options.freecam.settings.flymode.spectator": "Spectator",
   "options.freecam.settings.show.name": "Show My Name",
-  "options.freecam.settings.show.name.tooltip": "Show/hide your name while in FreeCam"
+  "options.freecam.settings.show.name.tooltip": "Show/hide your name while in FreeCam",
+  "options.freecam.settings.speed.forward": "Forward/Back Speed",
+  "options.freecam.settings.speed.strafe": "Strafe Speed",
+  "options.freecam.settings.speed.vertical": "Up/Down Speed",
+  "options.freecam.settings.inertia": "Decel Inertia",
+  "options.freecam.settings.inertia.tooltip": "Only affects deceleration when releasing keys.\n0%=instant stop, 100%=max inertia (smooth deceleration)"
 }
