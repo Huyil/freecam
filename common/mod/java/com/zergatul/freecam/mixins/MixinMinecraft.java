@@ -33,7 +33,7 @@ public abstract class MixinMinecraft {
             method = "handleKeybinds",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;isMouseGrabbed()Z"))
     private boolean freecam$onMouseGrabbedCheckForAttack(boolean original) {
-        if (FreeCam.instance.shouldForceContinueAttack()) {
+        if (FreeCam.instance.shouldBypassMouseGrabForAttack()) {
             return true;
         }
         return original;

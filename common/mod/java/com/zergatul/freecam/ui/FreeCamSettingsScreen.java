@@ -247,7 +247,7 @@ public class FreeCamSettingsScreen extends Screen {
                     FreeCamConfig cfg = FreeCam.instance.getConfig();
                     cfg.rtsMode = (value == 1);
                     cfg.spectatorMovement = (value == 2);
-                    FreeCam.instance.onRtsModeChanged();
+                    FreeCam.instance.onFlyModeChanged();
                 }));
     }
 

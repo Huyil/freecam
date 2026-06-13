@@ -18,7 +18,7 @@ public abstract class MixinEntity {
     @Inject(at = @At("HEAD"), method = "getEyePosition(F)Lnet/minecraft/world/phys/Vec3;", cancellable = true)
     private void onGetEyePosition(float p_20300_, CallbackInfoReturnable<Vec3> info) {
         FreeCam freeCam = FreeCam.instance;
-        if (freeCam.shouldOverrideCameraEntityPosition((Entity) (Object) this)) {
+        if (freeCam.shouldOverridePlayerEyeForPicking((Entity) (Object) this)) {
             info.setReturnValue(new Vec3(freeCam.getX(), freeCam.getY(), freeCam.getZ()));
         }
     }
@@ -26,7 +26,7 @@ public abstract class MixinEntity {
     @Inject(at = @At("HEAD"), method = "getViewVector(F)Lnet/minecraft/world/phys/Vec3;", cancellable = true)
     private void onGetViewVector(float p_20253_, CallbackInfoReturnable<Vec3> info) {
         FreeCam freeCam = FreeCam.instance;
-        if (freeCam.shouldOverrideCameraEntityPosition((Entity) (Object) this)) {
+        if (freeCam.shouldOverridePlayerEyeForPicking((Entity) (Object) this)) {
             Vec3 rtsDir = freeCam.getRTSPickDirection();
             if (rtsDir != null) {
                 info.setReturnValue(rtsDir);

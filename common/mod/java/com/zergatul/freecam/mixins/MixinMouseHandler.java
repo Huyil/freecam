@@ -20,7 +20,7 @@ public abstract class MixinMouseHandler {
 
     @Inject(method = "grabMouse", at = @At("HEAD"), cancellable = true)
     private void onGrabMouse(CallbackInfo ci) {
-        if (FreeCam.instance.shouldPreventMouseGrab()) {
+        if (FreeCam.instance.shouldReleaseCursor()) {
             ci.cancel();
         }
     }
